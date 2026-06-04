@@ -91,61 +91,6 @@
   .toggle-label { font-size: 0.85rem; color: #e0d0ff; flex: 1; }
   .toggle-sub { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
 
-  /* Photo Controls */
-  .photo-controls {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 16px;
-    display: none;
-  }
-  .photo-controls.active { display: block; }
-  .control-group {
-    margin-bottom: 12px;
-  }
-  .control-group:last-child { margin-bottom: 0; }
-  .control-label {
-    font-size: 0.75rem;
-    color: #c9b8f0;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-    font-weight: 600;
-  }
-  .control-value {
-    color: #ffd700;
-    font-weight: 700;
-  }
-  input[type="range"] {
-    width: 100%;
-    height: 6px;
-    border-radius: 3px;
-    background: rgba(255,255,255,0.1);
-    outline: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ffd700, #e8b800);
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ffd700, #e8b800);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  }
-
   .status-msg {
     font-size: 0.8rem; text-align: center; padding: 9px 12px;
     border-radius: 10px; margin-bottom: 14px; display: none; line-height: 1.5;
@@ -225,38 +170,6 @@
       </div>
     </div>
 
-    <!-- Photo Controls -->
-    <div class="photo-controls" id="photoControls">
-      <div class="control-group">
-        <div class="control-label">
-          <span>🔍 জুম</span>
-          <span class="control-value" id="zoomValue">100%</span>
-        </div>
-        <input type="range" id="zoomSlider" min="50" max="200" value="100" oninput="updatePhotoControls()">
-      </div>
-      <div class="control-group">
-        <div class="control-label">
-          <span>⬅️ বাম-ডান</span>
-          <span class="control-value" id="offsetXValue">0</span>
-        </div>
-        <input type="range" id="offsetXSlider" min="-100" max="100" value="0" oninput="updatePhotoControls()">
-      </div>
-      <div class="control-group">
-        <div class="control-label">
-          <span>⬆️ উপর-নিচ</span>
-          <span class="control-value" id="offsetYValue">0</span>
-        </div>
-        <input type="range" id="offsetYSlider" min="-100" max="100" value="0" oninput="updatePhotoControls()">
-      </div>
-      <div class="control-group">
-        <div class="control-label">
-          <span>☀️ উজ্জ্বলতা</span>
-          <span class="control-value" id="brightnessValue">100%</span>
-        </div>
-        <input type="range" id="brightnessSlider" min="50" max="150" value="100" oninput="updatePhotoControls()">
-      </div>
-    </div>
-
     <!-- BG REMOVE TOGGLE -->
     <div class="bg-toggle" id="bgToggle" onclick="toggleBG()">
       <div class="toggle-switch on" id="toggleSwitch"></div>
@@ -295,12 +208,6 @@ let bgRemovedBlob = null;
 let bgRemoveEnabled = true;
 let cardReady = false;
 
-// Photo control variables
-let photoZoom = 100;
-let photoOffsetX = 0;
-let photoOffsetY = 0;
-let photoBrightness = 100;
-
 // Toggle BG removal
 function toggleBG() {
   bgRemoveEnabled = !bgRemoveEnabled;
@@ -316,32 +223,12 @@ function toggleBG() {
   bgRemovedBlob = null; // reset cache
 }
 
-// Update photo controls display
-function updatePhotoControls() {
-  photoZoom = parseInt(document.getElementById('zoomSlider').value);
-  photoOffsetX = parseInt(document.getElementById('offsetXSlider').value);
-  photoOffsetY = parseInt(document.getElementById('offsetYSlider').value);
-  photoBrightness = parseInt(document.getElementById('brightnessSlider').value);
-  
-  document.getElementById('zoomValue').textContent = photoZoom + '%';
-  document.getElementById('offsetXValue').textContent = photoOffsetX;
-  document.getElementById('offsetYValue').textContent = photoOffsetY;
-  document.getElementById('brightnessValue').textContent = photoBrightness + '%';
-  
-  // Regenerate preview if card is already shown
-  if (cardReady) {
-    generateCard();
-  }
-}
-
 // Photo upload
 document.getElementById('photoInput').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   bgRemovedBlob = null; cardReady = false;
   document.getElementById('downloadBtn').disabled = true;
-  document.getElementById('photoControls').classList.add('active');
-  
   const reader = new FileReader();
   reader.onload = function(ev) {
     originalPhotoDataURL = ev.target.result;
@@ -421,152 +308,181 @@ async function drawCard(personName, personTitle, personImg) {
   canvas.width = SIZE; canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
 
-  // 1. Background Image (Cover mode with controls)
-  ctx.save();
-  
-  // Apply brightness filter
-  ctx.globalAlpha = photoBrightness / 100;
-  
-  const canvasRatio = SIZE / SIZE;
-  const imgRatio = personImg.width / personImg.height;
-  let drawW, drawH, drawX, drawY;
+  // 1. Background Gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, SIZE, SIZE);
+  bgGrad.addColorStop(0, '#f0e8ff');
+  bgGrad.addColorStop(0.4, '#ddc8f8');
+  bgGrad.addColorStop(1, '#b090e0');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, SIZE, SIZE);
 
-  // Calculate base dimensions
-  if (imgRatio > canvasRatio) {
-    drawH = SIZE;
-    drawW = SIZE * imgRatio;
+  // 2. Wave shape bottom
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, SIZE * 0.54); 
+  ctx.bezierCurveTo(SIZE*0.12, SIZE*0.44, SIZE*0.32, SIZE*0.61, SIZE*0.52, SIZE*0.52);
+  ctx.bezierCurveTo(SIZE*0.72, SIZE*0.43, SIZE*0.88, SIZE*0.59, SIZE, SIZE*0.52);
+  ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
+  const waveGrad = ctx.createLinearGradient(0, SIZE*0.5, 0, SIZE);
+  waveGrad.addColorStop(0, '#3a0080'); waveGrad.addColorStop(1, '#160030');
+  ctx.fillStyle = waveGrad; ctx.fill(); ctx.restore();
+
+  // 3. Second wave layer
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, SIZE*0.63);
+  ctx.bezierCurveTo(SIZE*0.18, SIZE*0.55, SIZE*0.42, SIZE*0.69, SIZE*0.62, SIZE*0.61);
+  ctx.bezierCurveTo(SIZE*0.80, SIZE*0.53, SIZE*0.92, SIZE*0.65, SIZE, SIZE*0.61);
+  ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
+  ctx.fillStyle = 'rgba(70,0,140,0.40)'; ctx.fill(); ctx.restore();
+
+  // 4. Circular Avatar
+  const avatarR = SIZE * 0.20; 
+  const avatarCX = SIZE / 2;
+  const avatarCY = SIZE * 0.27;
+
+  // Shadow for circle
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 25;
+  ctx.shadowOffsetY = 10;
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.restore();
+
+  // Gold gradient circular border
+  ctx.save();
+  const borderGrad = ctx.createLinearGradient(avatarCX - avatarR, avatarCY - avatarR, avatarCX + avatarR, avatarCY + avatarR);
+  borderGrad.addColorStop(0, '#ffe566');
+  borderGrad.addColorStop(0.5, '#fff');
+  borderGrad.addColorStop(1, '#e8a800');
+  ctx.beginPath();
+  ctx.arc(avatarCX, avatarCY, avatarR + 6, 0, Math.PI * 2);
+  ctx.strokeStyle = borderGrad;
+  ctx.lineWidth = 8;
+  ctx.stroke();
+  ctx.restore();
+
+  // Clip and draw image inside circle
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
+  ctx.clip();
+  
+  const srcRatio = personImg.width / personImg.height;
+  let drawW, drawH, drawX, drawY;
+  if (srcRatio >= 1) {
+    drawH = avatarR * 2; drawW = drawH * srcRatio;
   } else {
-    drawW = SIZE;
-    drawH = SIZE / imgRatio;
+    drawW = avatarR * 2; drawH = drawW / srcRatio;
   }
-  
-  // Apply zoom
-  const zoomFactor = photoZoom / 100;
-  drawW = drawW * zoomFactor;
-  drawH = drawH * zoomFactor;
-  
-  // Apply offset
-  drawX = (SIZE - drawW) / 2 + (photoOffsetX * SIZE / 200);
-  drawY = (SIZE - drawH) / 2 + (photoOffsetY * SIZE / 200);
-  
+  drawX = avatarCX - drawW / 2;
+  drawY = avatarCY - drawH / 2;
   ctx.drawImage(personImg, drawX, drawY, drawW, drawH);
   ctx.restore();
 
-  // 2. Gradient overlay only on the bottom section (for text readability)
-  const bottomGrad = ctx.createLinearGradient(0, SIZE*0.35, 0, SIZE);
-  bottomGrad.addColorStop(0, 'rgba(27, 5, 64, 0)');
-  bottomGrad.addColorStop(0.5, 'rgba(27, 5, 64, 0.3)');
-  bottomGrad.addColorStop(1, 'rgba(27, 5, 64, 0.7)');
-  ctx.fillStyle = bottomGrad;
-  ctx.fillRect(0, SIZE*0.35, SIZE, SIZE*0.65);
-
-  // 3. Wave shape bottom - Main Design Element
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(0, SIZE * 0.48); 
-  ctx.bezierCurveTo(SIZE*0.15, SIZE*0.35, SIZE*0.35, SIZE*0.60, SIZE*0.55, SIZE*0.45);
-  ctx.bezierCurveTo(SIZE*0.75, SIZE*0.35, SIZE*0.85, SIZE*0.55, SIZE, SIZE*0.45);
-  ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
-  const waveGrad = ctx.createLinearGradient(0, SIZE*0.4, 0, SIZE);
-  waveGrad.addColorStop(0, 'rgba(58, 0, 128, 0.95)'); 
-  waveGrad.addColorStop(1, 'rgba(22, 0, 48, 1)');
-  ctx.fillStyle = waveGrad; ctx.fill(); ctx.restore();
-
-  // 4. Second wave layer (Subtle accent)
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(0, SIZE*0.58);
-  ctx.bezierCurveTo(SIZE*0.20, SIZE*0.48, SIZE*0.45, SIZE*0.68, SIZE*0.65, SIZE*0.55);
-  ctx.bezierCurveTo(SIZE*0.85, SIZE*0.45, SIZE*0.95, SIZE*0.65, SIZE, SIZE*0.55);
-  ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
-  ctx.fillStyle = 'rgba(70, 0, 140, 0.3)'; ctx.fill(); ctx.restore();
-
-  // 5. Logos (Positioned like the reference)
+  // 5. Logos
   try {
     const logoSC = await loadImageFromURL('https://iili.io/CK8NYYJ.png');
     const ls = SIZE * 0.18;
-    ctx.drawImage(logoSC, SIZE - ls - SIZE*0.04, SIZE*0.04, ls, ls);
+    ctx.drawImage(logoSC, SIZE - ls - SIZE*0.03, SIZE*0.03, ls, ls);
   } catch(e) {}
 
   try {
     const apImg = await loadImageFromURL('https://iili.io/CKSHs1I.png');
     const ls = SIZE * 0.18;
-    ctx.drawImage(apImg, SIZE*0.04, SIZE*0.04, ls, ls);
+    ctx.drawImage(apImg, SIZE*0.03, SIZE*0.03, ls, ls);
   } catch(e) {}
 
-  // 6. Main Title (White with Yellow/Gold outline)
-  const textBaseY = SIZE * 0.62; 
-  const titleSize = Math.round(SIZE * 0.118);
+  // 6. Main Title & Subtitle (Pushed up slightly to give room below)
+  const textBaseY = SIZE * 0.65; 
+  const titleSize = Math.round(SIZE * 0.112);
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = `900 ${titleSize}px 'Hind Siliguri', sans-serif`;
-  
-  // Gold Outline
-  ctx.strokeStyle = '#ffd700'; 
-  ctx.lineWidth = 6; 
-  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#180038'; ctx.lineWidth = 13; ctx.lineJoin = 'round';
   ctx.strokeText('শব্দচিত্র আবৃত্তি স্কুল', SIZE/2, textBaseY);
-  
-  // White Fill
-  ctx.fillStyle = '#ffffff';
+  const tg = ctx.createLinearGradient(SIZE*0.15, textBaseY - titleSize, SIZE*0.85, textBaseY);
+  tg.addColorStop(0, '#ffe566'); tg.addColorStop(0.5, '#ffffff'); tg.addColorStop(1, '#ffc200');
+  ctx.fillStyle = tg;
   ctx.fillText('শব্দচিত্র আবৃত্তি স্কুল', SIZE/2, textBaseY);
   ctx.restore();
 
-  // 7. Subtitle (Yellow/Gold)
-  const sub1Y = textBaseY + SIZE*0.10; 
-  const subSize = Math.round(SIZE * 0.065);
+  const sub1Y = textBaseY + SIZE*0.092; 
+  const subSize = Math.round(SIZE * 0.062);
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = `700 ${subSize}px 'Hind Siliguri', sans-serif`;
+  ctx.strokeStyle = '#180038'; ctx.lineWidth = 8; ctx.lineJoin = 'round';
+  ctx.strokeText('শুভ উদ্বোধনে শুভকামনা', SIZE/2, sub1Y);
   ctx.fillStyle = '#ffd700';
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 5;
   ctx.fillText('শুভ উদ্বোধনে শুভকামনা', SIZE/2, sub1Y);
   ctx.restore();
 
-  // 8. Name & Designation
-  const nameY = sub1Y + SIZE*0.09;
-  const titleY = nameY + SIZE*0.05;
+  // 7. Name & Designation (Pushed up slightly)
+  const nameY = sub1Y + SIZE*0.085;
+  const titleY = nameY + SIZE*0.045;
   
+  // Branding section (Pushed down to bottom)
+  const brandY = SIZE * 0.925;
+  const urlY = SIZE * 0.96;
+
   // Responsive Name
   ctx.save();
   ctx.textAlign = 'center';
-  let nameFontSize = Math.round(SIZE*0.045);
+  let nameFontSize = Math.round(SIZE*0.042);
   ctx.font = `600 ${nameFontSize}px 'Hind Siliguri', sans-serif`;
+  const nameWidth = ctx.measureText(personName || 'আপনার নাম').width;
+  if (nameWidth > SIZE * 0.85) {
+    nameFontSize = Math.round(nameFontSize * (SIZE * 0.85 / nameWidth));
+    ctx.font = `600 ${nameFontSize}px 'Hind Siliguri', sans-serif`;
+  }
   ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 10;
+  ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 12;
   ctx.fillText(personName || 'আপনার নাম', SIZE/2, nameY);
   ctx.restore();
 
   // Responsive Designation
   ctx.save();
   ctx.textAlign = 'center';
-  let desFontSize = Math.round(SIZE*0.03);
+  let desFontSize = Math.round(SIZE*0.028);
   ctx.font = `500 ${desFontSize}px 'Hind Siliguri', sans-serif`;
-  ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+  const desWidth = ctx.measureText(personTitle || '').width;
+  if (desWidth > SIZE * 0.85) {
+    desFontSize = Math.round(desFontSize * (SIZE * 0.85 / desWidth));
+    ctx.font = `500 ${desFontSize}px 'Hind Siliguri', sans-serif`;
+  }
+  ctx.fillStyle = 'rgba(255,200,100,0.9)';
+  ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 8;
   ctx.fillText(personTitle || '', SIZE/2, titleY);
   ctx.restore();
 
-  // 9. Bottom Branding Section
-  const brandY = SIZE * 0.92;
-  const urlY = SIZE * 0.96;
-  
+  // 8. Bottom Branding Section (Ensuring NO overlap)
+  ctx.save();
+  const sg = ctx.createLinearGradient(0, SIZE*0.87, 0, SIZE);
+  sg.addColorStop(0, 'rgba(8,0,25,0)'); sg.addColorStop(1, 'rgba(8,0,25,0.88)');
+  ctx.fillStyle = sg; ctx.fillRect(0, SIZE*0.87, SIZE, SIZE*0.13);
+  ctx.restore();
+
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = `800 ${Math.round(SIZE*0.058)}px 'Hind Siliguri', sans-serif`;
+  ctx.font = `800 ${Math.round(SIZE*0.055)}px 'Hind Siliguri', sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 8;
   ctx.fillText('▶ শব্দচিত্র', SIZE/2, brandY);
   
   ctx.font = `400 ${Math.round(SIZE*0.028)}px 'Hind Siliguri', sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
   ctx.fillText('www.shobdochitro.online', SIZE/2, urlY);
   ctx.restore();
 
-  // 10. Small corner icons (matching reference)
+  // 9. Footer: AP logo image
   try {
     const apFooter = await loadImageFromURL('https://iili.io/CKSHs1I.png');
-    const fh = SIZE * 0.05;
-    ctx.drawImage(apFooter, SIZE*0.03, SIZE*0.94, fh, fh);
+    const fh = SIZE * 0.055;
+    ctx.drawImage(apFooter, SIZE*0.025, SIZE*0.958, fh, fh);
   } catch(e) {}
 }
 

@@ -308,7 +308,7 @@ async function drawCard(personName, personTitle, personImg) {
   canvas.width = SIZE; canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
 
-  // BG gradient
+  // 1. Background Gradient
   const bgGrad = ctx.createLinearGradient(0, 0, SIZE, SIZE);
   bgGrad.addColorStop(0, '#f0e8ff');
   bgGrad.addColorStop(0.4, '#ddc8f8');
@@ -316,126 +316,88 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, SIZE, SIZE);
 
-  // Wave shape bottom
+  // 2. Wave shape bottom
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(0, SIZE * 0.53);
-  ctx.bezierCurveTo(SIZE*0.12, SIZE*0.43, SIZE*0.32, SIZE*0.60, SIZE*0.52, SIZE*0.51);
-  ctx.bezierCurveTo(SIZE*0.72, SIZE*0.42, SIZE*0.88, SIZE*0.58, SIZE, SIZE*0.51);
+  ctx.moveTo(0, SIZE * 0.54); 
+  ctx.bezierCurveTo(SIZE*0.12, SIZE*0.44, SIZE*0.32, SIZE*0.61, SIZE*0.52, SIZE*0.52);
+  ctx.bezierCurveTo(SIZE*0.72, SIZE*0.43, SIZE*0.88, SIZE*0.59, SIZE, SIZE*0.52);
   ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
   const waveGrad = ctx.createLinearGradient(0, SIZE*0.5, 0, SIZE);
   waveGrad.addColorStop(0, '#3a0080'); waveGrad.addColorStop(1, '#160030');
   ctx.fillStyle = waveGrad; ctx.fill(); ctx.restore();
 
-  // Second wave layer
+  // 3. Second wave layer
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(0, SIZE*0.62);
-  ctx.bezierCurveTo(SIZE*0.18, SIZE*0.54, SIZE*0.42, SIZE*0.68, SIZE*0.62, SIZE*0.60);
-  ctx.bezierCurveTo(SIZE*0.80, SIZE*0.52, SIZE*0.92, SIZE*0.64, SIZE, SIZE*0.60);
+  ctx.moveTo(0, SIZE*0.63);
+  ctx.bezierCurveTo(SIZE*0.18, SIZE*0.55, SIZE*0.42, SIZE*0.69, SIZE*0.62, SIZE*0.61);
+  ctx.bezierCurveTo(SIZE*0.80, SIZE*0.53, SIZE*0.92, SIZE*0.65, SIZE, SIZE*0.61);
   ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
   ctx.fillStyle = 'rgba(70,0,140,0.40)'; ctx.fill(); ctx.restore();
 
-  // ---- Person photo in rectangle ----
-  const photoW = SIZE * 0.50;
-  const photoH = SIZE * 0.38;
-  const photoCX = SIZE / 2;
-  const photoCY = SIZE * 0.295;
-  const photoX = photoCX - photoW / 2;
-  const photoY = photoCY - photoH / 2;
-  const cornerRadius = 16;
+  // 4. Circular Avatar
+  const avatarR = SIZE * 0.20; 
+  const avatarCX = SIZE / 2;
+  const avatarCY = SIZE * 0.27;
 
-  // Gold border rectangle with rounded corners
+  // Shadow for circle
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(photoX + cornerRadius, photoY);
-  ctx.lineTo(photoX + photoW - cornerRadius, photoY);
-  ctx.quadraticCurveTo(photoX + photoW, photoY, photoX + photoW, photoY + cornerRadius);
-  ctx.lineTo(photoX + photoW, photoY + photoH - cornerRadius);
-  ctx.quadraticCurveTo(photoX + photoW, photoY + photoH, photoX + photoW - cornerRadius, photoY + photoH);
-  ctx.lineTo(photoX + cornerRadius, photoY + photoH);
-  ctx.quadraticCurveTo(photoX, photoY + photoH, photoX, photoY + photoH - cornerRadius);
-  ctx.lineTo(photoX, photoY + cornerRadius);
-  ctx.quadraticCurveTo(photoX, photoY, photoX + cornerRadius, photoY);
-  ctx.closePath();
-  const borderGrad = ctx.createLinearGradient(photoX, photoY, photoX + photoW, photoY + photoH);
+  ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur = 25;
+  ctx.shadowOffsetY = 10;
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.restore();
+
+  // Gold gradient circular border
+  ctx.save();
+  const borderGrad = ctx.createLinearGradient(avatarCX - avatarR, avatarCY - avatarR, avatarCX + avatarR, avatarCY + avatarR);
   borderGrad.addColorStop(0, '#ffe566');
   borderGrad.addColorStop(0.5, '#fff');
   borderGrad.addColorStop(1, '#e8a800');
+  ctx.beginPath();
+  ctx.arc(avatarCX, avatarCY, avatarR + 6, 0, Math.PI * 2);
   ctx.strokeStyle = borderGrad;
-  ctx.lineWidth = 7;
+  ctx.lineWidth = 8;
   ctx.stroke();
   ctx.restore();
 
-  // Clip & draw person image in rectangle
+  // Clip and draw image inside circle
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(photoX + cornerRadius, photoY);
-  ctx.lineTo(photoX + photoW - cornerRadius, photoY);
-  ctx.quadraticCurveTo(photoX + photoW, photoY, photoX + photoW, photoY + cornerRadius);
-  ctx.lineTo(photoX + photoW, photoY + photoH - cornerRadius);
-  ctx.quadraticCurveTo(photoX + photoW, photoY + photoH, photoX + photoW - cornerRadius, photoY + photoH);
-  ctx.lineTo(photoX + cornerRadius, photoY + photoH);
-  ctx.quadraticCurveTo(photoX, photoY + photoH, photoX, photoY + photoH - cornerRadius);
-  ctx.lineTo(photoX, photoY + cornerRadius);
-  ctx.quadraticCurveTo(photoX, photoY, photoX + cornerRadius, photoY);
-  ctx.closePath();
+  ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
   ctx.clip();
-
-  // Fit image to rectangle (cover)
+  
   const srcRatio = personImg.width / personImg.height;
   let drawW, drawH, drawX, drawY;
-  if (srcRatio >= photoW / photoH) {
-    drawH = photoH; drawW = photoH * srcRatio;
+  if (srcRatio >= 1) {
+    drawH = avatarR * 2; drawW = drawH * srcRatio;
   } else {
-    drawW = photoW; drawH = photoW / srcRatio;
+    drawW = avatarR * 2; drawH = drawW / srcRatio;
   }
-  drawX = photoCX - drawW / 2;
-  drawY = photoCY - drawH / 2;
+  drawX = avatarCX - drawW / 2;
+  drawY = avatarCY - drawH / 2;
   ctx.drawImage(personImg, drawX, drawY, drawW, drawH);
   ctx.restore();
 
-  // ---- Logos ----
-  // শব্দচিত্র logo — top RIGHT
+  // 5. Logos
   try {
     const logoSC = await loadImageFromURL('https://iili.io/CK8NYYJ.png');
     const ls = SIZE * 0.18;
     ctx.drawImage(logoSC, SIZE - ls - SIZE*0.03, SIZE*0.03, ls, ls);
-  } catch(e) {
-    ctx.save();
-    ctx.font = `700 ${SIZE*0.04}px 'Hind Siliguri', sans-serif`;
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'right';
-    ctx.fillText('শব্দচিত্র আবৃত্তি স্কুল', SIZE - SIZE*0.04, SIZE*0.09);
-    ctx.restore();
-  }
+  } catch(e) {}
 
-  // AP/Partner logo — top LEFT (image)
   try {
     const apImg = await loadImageFromURL('https://iili.io/CKSHs1I.png');
     const ls = SIZE * 0.18;
     ctx.drawImage(apImg, SIZE*0.03, SIZE*0.03, ls, ls);
-  } catch(e) {
-    // fallback text
-    ctx.save();
-    ctx.beginPath();
-    const apR = SIZE * 0.065;
-    const apX = SIZE*0.03 + apR;
-    const apY = SIZE*0.03 + apR;
-    ctx.arc(apX, apY, apR, 0, Math.PI*2);
-    ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = '#1a0040'; ctx.lineWidth = 3; ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.font = `800 ${apR*0.88}px Arial, sans-serif`;
-    ctx.fillStyle = '#cc1a1a';
-    ctx.fillText('AP', apX, apY + apR*0.32);
-    ctx.restore();
-  }
+  } catch(e) {}
 
-  // ---- TEXTS ----
-  const textBaseY = SIZE * 0.635;
-
-  // "শব্দচিত্র" big title
+  // 6. Main Title & Subtitle (Pushed up slightly to give room below)
+  const textBaseY = SIZE * 0.65; 
   const titleSize = Math.round(SIZE * 0.112);
   ctx.save();
   ctx.textAlign = 'center';
@@ -448,8 +410,7 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillText('শব্দচিত্র আবৃত্তি স্কুল', SIZE/2, textBaseY);
   ctx.restore();
 
-  // "শুভ উদ্বোধনে শুভকামনা"
-  const sub1Y = textBaseY + SIZE*0.098;
+  const sub1Y = textBaseY + SIZE*0.092; 
   const subSize = Math.round(SIZE * 0.062);
   ctx.save();
   ctx.textAlign = 'center';
@@ -460,61 +421,69 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillText('শুভ উদ্বোধনে শুভকামনা', SIZE/2, sub1Y);
   ctx.restore();
 
-  // Person name
-  const nameY = sub1Y + SIZE*0.092;
+  // 7. Name & Designation (Pushed up slightly)
+  const nameY = sub1Y + SIZE*0.085;
+  const titleY = nameY + SIZE*0.045;
+  
+  // Branding section (Pushed down to bottom)
+  const brandY = SIZE * 0.925;
+  const urlY = SIZE * 0.96;
+
+  // Responsive Name
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = `600 ${Math.round(SIZE*0.040)}px 'Hind Siliguri', sans-serif`;
+  let nameFontSize = Math.round(SIZE*0.042);
+  ctx.font = `600 ${nameFontSize}px 'Hind Siliguri', sans-serif`;
+  const nameWidth = ctx.measureText(personName || 'আপনার নাম').width;
+  if (nameWidth > SIZE * 0.85) {
+    nameFontSize = Math.round(nameFontSize * (SIZE * 0.85 / nameWidth));
+    ctx.font = `600 ${nameFontSize}px 'Hind Siliguri', sans-serif`;
+  }
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 12;
   ctx.fillText(personName || 'আপনার নাম', SIZE/2, nameY);
   ctx.restore();
 
-  // Person title
-  const titleY = nameY + SIZE*0.055;
+  // Responsive Designation
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = `500 ${Math.round(SIZE*0.028)}px 'Hind Siliguri', sans-serif`;
-  ctx.fillStyle = 'rgba(255,200,100,0.85)';
+  let desFontSize = Math.round(SIZE*0.028);
+  ctx.font = `500 ${desFontSize}px 'Hind Siliguri', sans-serif`;
+  const desWidth = ctx.measureText(personTitle || '').width;
+  if (desWidth > SIZE * 0.85) {
+    desFontSize = Math.round(desFontSize * (SIZE * 0.85 / desWidth));
+    ctx.font = `500 ${desFontSize}px 'Hind Siliguri', sans-serif`;
+  }
+  ctx.fillStyle = 'rgba(255,200,100,0.9)';
   ctx.shadowColor = 'rgba(0,0,0,0.7)'; ctx.shadowBlur = 8;
   ctx.fillText(personTitle || '', SIZE/2, titleY);
   ctx.restore();
 
-  // Bottom strip gradient
+  // 8. Bottom Branding Section (Ensuring NO overlap)
   ctx.save();
   const sg = ctx.createLinearGradient(0, SIZE*0.87, 0, SIZE);
   sg.addColorStop(0, 'rgba(8,0,25,0)'); sg.addColorStop(1, 'rgba(8,0,25,0.88)');
   ctx.fillStyle = sg; ctx.fillRect(0, SIZE*0.87, SIZE, SIZE*0.13);
   ctx.restore();
 
-  // Brand name bottom center
   ctx.save();
   ctx.textAlign = 'center';
   ctx.font = `800 ${Math.round(SIZE*0.055)}px 'Hind Siliguri', sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 8;
-  ctx.fillText('▶ শব্দচিত্র', SIZE/2, SIZE*0.918);
+  ctx.fillText('▶ শব্দচিত্র', SIZE/2, brandY);
+  
   ctx.font = `400 ${Math.round(SIZE*0.028)}px 'Hind Siliguri', sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.65)';
-  ctx.fillText('www.shobdochitro.online', SIZE/2, SIZE*0.952);
+  ctx.fillText('www.shobdochitro.online', SIZE/2, urlY);
   ctx.restore();
 
-  // ---- Footer: AP logo image + credit text ----
-  // Left side: AP logo image small
+  // 9. Footer: AP logo image
   try {
     const apFooter = await loadImageFromURL('https://iili.io/CKSHs1I.png');
     const fh = SIZE * 0.055;
     ctx.drawImage(apFooter, SIZE*0.025, SIZE*0.958, fh, fh);
-  } catch(e) { /* silent */ }
-
-  // Right side: কারিগরি সহায়তায়
-  ctx.save();
-  ctx.textAlign = 'right';
-  ctx.font = `400 ${Math.round(SIZE*0.025)}px 'Hind Siliguri', sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.50)';
-  ctx.shadowBlur = 0;
-  
-  ctx.restore();
+  } catch(e) {}
 }
 
 // MAIN GENERATE

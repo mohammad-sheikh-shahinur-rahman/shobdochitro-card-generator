@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>শব্দচিত্র আবৃত্তি স্কুল - কার্ড জেনারেটর</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #2b0a6e;
+    --secondary: #6a0dad;
+    --accent: #e8b800;
+    --white: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hind Siliguri', sans-serif;
+    background: linear-gradient(135deg, #1a0540 0%, #3d0f8a 50%, #6a0dad 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    color: #fff;
+  }
+  h1 {
+    font-size: clamp(1.2rem, 4vw, 1.9rem);
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+  .subtitle { font-size: 0.9rem; color: #d4b8ff; text-align: center; margin-bottom: 22px; }
+  .main-container {
+    display: flex; flex-wrap: wrap; gap: 24px;
+    justify-content: center; width: 100%; max-width: 1050px;
+  }
+
+  /* FORM */
+  .form-panel {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 24px 20px;
+    width: 100%; max-width: 370px; flex-shrink: 0;
+  }
+  .form-panel h2 { font-size: 1rem; margin-bottom: 18px; color: #e0d0ff; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 10px; }
+  label { display: block; font-size: 0.83rem; color: #c9b8f0; margin-bottom: 5px; font-weight: 600; }
+  input[type="text"] {
+    width: 100%; padding: 11px 14px; border-radius: 10px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1); color: #fff;
+    font-family: 'Hind Siliguri', sans-serif; font-size: 1rem;
+    outline: none; margin-bottom: 16px; transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: rgba(255,255,255,0.35); }
+
+  .upload-area {
+    border: 2px dashed rgba(232,184,0,0.5); border-radius: 14px;
+    padding: 22px 14px; text-align: center; cursor: pointer;
+    transition: all 0.25s; background: rgba(232,184,0,0.05); margin-bottom: 14px; position: relative;
+  }
+  .upload-area:hover { border-color: var(--accent); background: rgba(232,184,0,0.1); }
+  .upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 2rem; margin-bottom: 6px; }
+  .upload-area p { font-size: 0.82rem; color: #c9b8f0; }
+  .upload-area .hint { font-size: 0.74rem; color: rgba(255,255,255,0.4); margin-top: 3px; }
+  .preview-thumb { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); display: block; margin: 0 auto 8px; }
+
+  /* BG Toggle */
+  .bg-toggle {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.07); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 16px; cursor: pointer;
+    border: 1.5px solid rgba(255,255,255,0.12); transition: all 0.2s;
+  }
+  .bg-toggle:hover { background: rgba(255,255,255,0.12); }
+  .toggle-switch {
+    width: 42px; height: 24px; background: rgba(255,255,255,0.2);
+    border-radius: 12px; position: relative; transition: background 0.3s; flex-shrink: 0;
+  }
+  .toggle-switch.on { background: linear-gradient(90deg, #6a0dad, #e8b800); }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; background: #fff; border-radius: 50%;
+    transition: transform 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .toggle-switch.on::after { transform: translateX(18px); }
+  .toggle-label { font-size: 0.85rem; color: #e0d0ff; flex: 1; }
+  .toggle-sub { font-size: 0.72rem; color: rgba(255,255,255,0.45); }
+
+  /* Photo Controls */
+  .photo-controls {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .photo-controls.active { display: block; }
+  .control-group {
+    margin-bottom: 12px;
+  }
+  .control-group:last-child { margin-bottom: 0; }
+  .control-label {
+    font-size: 0.75rem;
+    color: #c9b8f0;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .control-value {
+    color: #ffd700;
+    font-weight: 700;
+  }
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.1);
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700, #e8b800);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700, #e8b800);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  .status-msg {
+    font-size: 0.8rem; text-align: center; padding: 9px 12px;
+    border-radius: 10px; margin-bottom: 14px; display: none; line-height: 1.5;
+  }
+  .status-msg.processing { display: block; background: rgba(232,184,0,0.15); color: var(--accent); }
+  .status-msg.done { display: block; background: rgba(0,180,80,0.15); color: #4dffaa; }
+  .status-msg.error { display: block; background: rgba(255,60,60,0.15); color: #ff9090; }
+
+  .btn {
+    width: 100%; padding: 13px; border-radius: 12px; border: none;
+    font-family: 'Hind Siliguri', sans-serif; font-size: 1rem; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 10px;
+  }
+  .btn-preview { background: linear-gradient(135deg, var(--secondary), var(--primary)); color: #fff; border: 2px solid rgba(255,255,255,0.2); }
+  .btn-preview:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(106,13,173,0.5); }
+  .btn-download { background: linear-gradient(135deg, var(--accent), #b88a00); color: #1a0540; }
+  .btn-download:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(232,184,0,0.4); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* PREVIEW */
+  .preview-panel { display: flex; flex-direction: column; align-items: center; gap: 14px; flex: 1; min-width: 280px; }
+  .preview-panel h2 { font-size: 0.95rem; color: #d4b8ff; align-self: flex-start; }
+  #card-canvas-container { width: 100%; max-width: 460px; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.55); display: none; }
+  canvas#cardCanvas { width: 100% !important; height: 100% !important; display: block; }
+  .placeholder-card {
+    width: 100%; max-width: 460px; aspect-ratio: 1/1;
+    background: linear-gradient(160deg, #2b0a6e, #6a0dad);
+    border-radius: 18px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.3); font-size: 0.9rem; text-align: center;
+    padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); gap: 10px;
+  }
+  .placeholder-card .ph-icon { font-size: 2.8rem; opacity: 0.4; }
+
+  .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Footer credit */
+  .page-footer {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.7;
+  }
+  .page-footer a { color: rgba(180,150,255,0.7); text-decoration: none; }
+  .page-footer a:hover { color: #e8b800; }
+
+  @media (max-width: 540px) {
+    .form-panel { padding: 18px 14px; }
+    body { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🎙️ শব্দচিত্র আবৃত্তি স্কুল</h1>
+<p class="subtitle">শুভ উদ্বোধন শুভেচ্ছা কার্ড জেনারেটর</p>
+
+<div class="main-container">
+  <div class="form-panel">
+    <h2>📝 তথ্য পূরণ করুন</h2>
+
+    <label>আপনার নাম (বাংলায়)</label>
+    <input type="text" id="nameInput" placeholder="যেমন: মুসা আকন্দ" />
+
+    <label>পদবী (পদ/উপাধি)</label><br>
+    <input type="text" id="titleInput" placeholder="যেমন: সংস্থাপক, শিল্পী, ছাত্র" />
+
+    <label>ফটো আপলোড করুন</label>
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="photoInput" accept="image/*" />
+      <div id="uploadContent">
+        <div class="upload-icon">📸</div>
+        <p>ক্লিক করুন বা ছবি টেনে আনুন</p>
+        <p class="hint">JPG, PNG, WEBP সাপোর্টেড</p>
+      </div>
+    </div>
+
+    <!-- Photo Controls -->
+    <div class="photo-controls" id="photoControls">
+      <div class="control-group">
+        <div class="control-label">
+          <span>🔍 জুম</span>
+          <span class="control-value" id="zoomValue">100%</span>
+        </div>
+        <input type="range" id="zoomSlider" min="50" max="200" value="100" oninput="updatePhotoControls()">
+      </div>
+      <div class="control-group">
+        <div class="control-label">
+          <span>⬅️ বাম-ডান</span>
+          <span class="control-value" id="offsetXValue">0</span>
+        </div>
+        <input type="range" id="offsetXSlider" min="-100" max="100" value="0" oninput="updatePhotoControls()">
+      </div>
+      <div class="control-group">
+        <div class="control-label">
+          <span>⬆️ উপর-নিচ</span>
+          <span class="control-value" id="offsetYValue">0</span>
+        </div>
+        <input type="range" id="offsetYSlider" min="-100" max="100" value="0" oninput="updatePhotoControls()">
+      </div>
+      <div class="control-group">
+        <div class="control-label">
+          <span>☀️ উজ্জ্বলতা</span>
+          <span class="control-value" id="brightnessValue">100%</span>
+        </div>
+        <input type="range" id="brightnessSlider" min="50" max="150" value="100" oninput="updatePhotoControls()">
+      </div>
+    </div>
+
+    <!-- BG REMOVE TOGGLE -->
+    <div class="bg-toggle" id="bgToggle" onclick="toggleBG()">
+      <div class="toggle-switch on" id="toggleSwitch"></div>
+      <div>
+        <div class="toggle-label">অটো ব্যাকগ্রাউন্ড রিমুভ</div>
+        <div class="toggle-sub" id="toggleSubText">চালু — ব্যাকগ্রাউন্ড মুছে যাবে</div>
+      </div>
+    </div>
+
+    <div class="status-msg" id="statusMsg"></div>
+
+    <button class="btn btn-preview" id="previewBtn" onclick="generateCard()">👁️ প্রিভিউ দেখুন</button>
+    <button class="btn btn-download" id="downloadBtn" onclick="downloadCard()" disabled>⬇️ কার্ড ডাউনলোড করুন</button>
+  </div>
+
+  <div class="preview-panel">
+    <h2>🖼️ প্রিভিউ</h2>
+    <div id="card-canvas-container"><canvas id="cardCanvas"></canvas></div>
+    <div class="placeholder-card" id="placeholderCard">
+      <div class="ph-icon">🎭</div>
+      <div>নাম ও ফটো দিয়ে<br>প্রিভিউ দেখুন</div>
+    </div>
+  </div>
+</div>
+
+<!-- Page footer -->
+<div class="page-footer">
+  কারিগরি সহায়তায়:
+  <a href="https://www.linkedin.com/in/mohammad-sheikh-shahinur-rahman" target="_blank" rel="noopener">মোহাম্মদ শেখ শাহিনুর রহমান</a>
+</div>
+
+<script>
+const REMOVEBG_API_KEY = '5ZTze8QvAX1f86u8HoJXDDyg';
+let originalPhotoDataURL = null;
+let bgRemovedBlob = null;
+let bgRemoveEnabled = true;
+let cardReady = false;
+
+// Photo control variables
+let photoZoom = 100;
+let photoOffsetX = 0;
+let photoOffsetY = 0;
+let photoBrightness = 100;
+
+// Toggle BG removal
+function toggleBG() {
+  bgRemoveEnabled = !bgRemoveEnabled;
+  const sw = document.getElementById('toggleSwitch');
+  const sub = document.getElementById('toggleSubText');
+  if (bgRemoveEnabled) {
+    sw.classList.add('on');
+    sub.textContent = 'চালু — ব্যাকগ্রাউন্ড মুছে যাবে';
+  } else {
+    sw.classList.remove('on');
+    sub.textContent = 'বন্ধ — মূল ছবি ব্যবহার হবে';
+  }
+  bgRemovedBlob = null; // reset cache
+}
+
+// Update photo controls display
+function updatePhotoControls() {
+  photoZoom = parseInt(document.getElementById('zoomSlider').value);
+  photoOffsetX = parseInt(document.getElementById('offsetXSlider').value);
+  photoOffsetY = parseInt(document.getElementById('offsetYSlider').value);
+  photoBrightness = parseInt(document.getElementById('brightnessSlider').value);
+  
+  document.getElementById('zoomValue').textContent = photoZoom + '%';
+  document.getElementById('offsetXValue').textContent = photoOffsetX;
+  document.getElementById('offsetYValue').textContent = photoOffsetY;
+  document.getElementById('brightnessValue').textContent = photoBrightness + '%';
+  
+  // Regenerate preview if card is already shown
+  if (cardReady) {
+    generateCard();
+  }
+}
+
+// Photo upload
+document.getElementById('photoInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  bgRemovedBlob = null; cardReady = false;
+  document.getElementById('downloadBtn').disabled = true;
+  document.getElementById('photoControls').classList.add('active');
+  
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    originalPhotoDataURL = ev.target.result;
+    document.getElementById('uploadContent').innerHTML = `
+      <img src="${originalPhotoDataURL}" class="preview-thumb" alt="preview"/>
+      <p style="font-size:0.78rem;color:#a0f0c0;">✅ ফটো লোড হয়েছে</p>
+    `;
+  };
+  reader.readAsDataURL(file);
+});
+
+function setStatus(type, msg) {
+  const el = document.getElementById('statusMsg');
+  el.className = 'status-msg ' + type;
+  el.innerHTML = msg;
+}
+
+// Remove.bg API call
+async function removeBackground(dataURL) {
+  setStatus('processing', '<span class="spinner"></span> ব্যাকগ্রাউন্ড রিমুভ হচ্ছে...');
+  const fetchRes = await fetch(dataURL);
+  const blob = await fetchRes.blob();
+  const formData = new FormData();
+  formData.append('image_file', blob, 'photo.png');
+  formData.append('size', 'auto');
+
+  const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+    method: 'POST',
+    headers: { 'X-Api-Key': REMOVEBG_API_KEY },
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error('Remove.bg: ' + errText);
+  }
+  setStatus('done', '✅ ব্যাকগ্রাউন্ড রিমুভ সম্পন্ন!');
+  return await response.blob();
+}
+
+// Load image from blob
+function loadBlobAsImage(blob) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// Load image from dataURL
+function loadDataURLAsImage(dataURL) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataURL;
+  });
+}
+
+// Load image from URL (cross-origin)
+function loadImageFromURL(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url + '?t=' + Date.now();
+  });
+}
+
+// Draw the card
+async function drawCard(personName, personTitle, personImg) {
+  const SIZE = 900;
+  const canvas = document.getElementById('cardCanvas');
+  canvas.width = SIZE; canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Background Image (Cover mode with controls)
+  ctx.save();
+  
+  // Apply brightness filter
+  ctx.globalAlpha = photoBrightness / 100;
+  
+  const canvasRatio = SIZE / SIZE;
+  const imgRatio = personImg.width / personImg.height;
+  let drawW, drawH, drawX, drawY;
+
+  // Calculate base dimensions
+  if (imgRatio > canvasRatio) {
+    drawH = SIZE;
+    drawW = SIZE * imgRatio;
+  } else {
+    drawW = SIZE;
+    drawH = SIZE / imgRatio;
+  }
+  
+  // Apply zoom
+  const zoomFactor = photoZoom / 100;
+  drawW = drawW * zoomFactor;
+  drawH = drawH * zoomFactor;
+  
+  // Apply offset
+  drawX = (SIZE - drawW) / 2 + (photoOffsetX * SIZE / 200);
+  drawY = (SIZE - drawH) / 2 + (photoOffsetY * SIZE / 200);
+  
+  ctx.drawImage(personImg, drawX, drawY, drawW, drawH);
+  ctx.restore();
+
+  // 2. Gradient overlay only on the bottom section (for text readability)
+  const bottomGrad = ctx.createLinearGradient(0, SIZE*0.35, 0, SIZE);
+  bottomGrad.addColorStop(0, 'rgba(27, 5, 64, 0)');
+  bottomGrad.addColorStop(0.5, 'rgba(27, 5, 64, 0.3)');
+  bottomGrad.addColorStop(1, 'rgba(27, 5, 64, 0.7)');
+  ctx.fillStyle = bottomGrad;
+  ctx.fillRect(0, SIZE*0.35, SIZE, SIZE*0.65);
+
+  // 3. Wave shape bottom - Main Design Element
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, SIZE * 0.48); 
+  ctx.bezierCurveTo(SIZE*0.15, SIZE*0.35, SIZE*0.35, SIZE*0.60, SIZE*0.55, SIZE*0.45);
+  ctx.bezierCurveTo(SIZE*0.75, SIZE*0.35, SIZE*0.85, SIZE*0.55, SIZE, SIZE*0.45);
+  ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
+  const waveGrad = ctx.createLinearGradient(0, SIZE*0.4, 0, SIZE);
+  waveGrad.addColorStop(0, 'rgba(58, 0, 128, 0.95)'); 
+  waveGrad.addColorStop(1, 'rgba(22, 0, 48, 1)');
+  ctx.fillStyle = waveGrad; ctx.fill(); ctx.restore();
+
+  // 4. Second wave layer (Subtle accent)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, SIZE*0.58);
+  ctx.bezierCurveTo(SIZE*0.20, SIZE*0.48, SIZE*0.45, SIZE*0.68, SIZE*0.65, SIZE*0.55);
+  ctx.bezierCurveTo(SIZE*0.85, SIZE*0.45, SIZE*0.95, SIZE*0.65, SIZE, SIZE*0.55);
+  ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
+  ctx.fillStyle = 'rgba(70, 0, 140, 0.3)'; ctx.fill(); ctx.restore();
+
+  // 5. Logos (Positioned like the reference)
+  try {
+    const logoSC = await loadImageFromURL('https://iili.io/CK8NYYJ.png');
+    const ls = SIZE * 0.18;
+    ctx.drawImage(logoSC, SIZE - ls - SIZE*0.04, SIZE*0.04, ls, ls);
+  } catch(e) {}
+
+  try {
+    const apImg = await loadImageFromURL('https://iili.io/CKSHs1I.png');
+    const ls = SIZE * 0.18;
+    ctx.drawImage(apImg, SIZE*0.04, SIZE*0.04, ls, ls);
+  } catch(e) {}
+
+  // 6. Main Title (White with Yellow/Gold outline)
+  const textBaseY = SIZE * 0.62; 
+  const titleSize = Math.round(SIZE * 0.118);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = `900 ${titleSize}px 'Hind Siliguri', sans-serif`;
+  
+  // Gold Outline
+  ctx.strokeStyle = '#ffd700'; 
+  ctx.lineWidth = 6; 
+  ctx.lineJoin = 'round';
+  ctx.strokeText('শব্দচিত্র আবৃত্তি স্কুল', SIZE/2, textBaseY);
+  
+  // White Fill
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('শব্দচিত্র আবৃত্তি স্কুল', SIZE/2, textBaseY);
+  ctx.restore();
+
+  // 7. Subtitle (Yellow/Gold)
+  const sub1Y = textBaseY + SIZE*0.10; 
+  const subSize = Math.round(SIZE * 0.065);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = `700 ${subSize}px 'Hind Siliguri', sans-serif`;
+  ctx.fillStyle = '#ffd700';
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 5;
+  ctx.fillText('শুভ উদ্বোধনে শুভকামনা', SIZE/2, sub1Y);
+  ctx.restore();
+
+  // 8. Name & Designation
+  const nameY = sub1Y + SIZE*0.09;
+  const titleY = nameY + SIZE*0.05;
+  
+  // Responsive Name
+  ctx.save();
+  ctx.textAlign = 'center';
+  let nameFontSize = Math.round(SIZE*0.045);
+  ctx.font = `600 ${nameFontSize}px 'Hind Siliguri', sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 10;
+  ctx.fillText(personName || 'আপনার নাম', SIZE/2, nameY);
+  ctx.restore();
+
+  // Responsive Designation
+  ctx.save();
+  ctx.textAlign = 'center';
+  let desFontSize = Math.round(SIZE*0.03);
+  ctx.font = `500 ${desFontSize}px 'Hind Siliguri', sans-serif`;
+  ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+  ctx.fillText(personTitle || '', SIZE/2, titleY);
+  ctx.restore();
+
+  // 9. Bottom Branding Section
+  const brandY = SIZE * 0.92;
+  const urlY = SIZE * 0.96;
+  
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = `800 ${Math.round(SIZE*0.058)}px 'Hind Siliguri', sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 8;
+  ctx.fillText('▶ শব্দচিত্র', SIZE/2, brandY);
+  
+  ctx.font = `400 ${Math.round(SIZE*0.028)}px 'Hind Siliguri', sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fillText('www.shobdochitro.online', SIZE/2, urlY);
+  ctx.restore();
+
+  // 10. Small corner icons (matching reference)
+  try {
+    const apFooter = await loadImageFromURL('https://iili.io/CKSHs1I.png');
+    const fh = SIZE * 0.05;
+    ctx.drawImage(apFooter, SIZE*0.03, SIZE*0.94, fh, fh);
+  } catch(e) {}
+}
+
+// MAIN GENERATE
+async function generateCard() {
+  const name = document.getElementById('nameInput').value.trim();
+  const title = document.getElementById('titleInput').value.trim();
+  if (!name) { setStatus('error', '❌ অনুগ্রহ করে আপনার নাম লিখুন'); return; }
+  if (!originalPhotoDataURL) { setStatus('error', '❌ অনুগ্রহ করে একটি ফটো আপলোড করুন'); return; }
+
+  const btn = document.getElementById('previewBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> প্রসেস হচ্ছে...';
+  document.getElementById('downloadBtn').disabled = true;
+
+  try {
+    let personImg;
+
+    if (bgRemoveEnabled) {
+      if (!bgRemovedBlob) {
+        bgRemovedBlob = await removeBackground(originalPhotoDataURL);
+      }
+      personImg = await loadBlobAsImage(bgRemovedBlob);
+    } else {
+      setStatus('processing', '<span class="spinner"></span> কার্ড তৈরি হচ্ছে...');
+      personImg = await loadDataURLAsImage(originalPhotoDataURL);
+    }
+
+    setStatus('processing', '<span class="spinner"></span> কার্ড তৈরি হচ্ছে...');
+    await drawCard(name, title, personImg);
+
+    document.getElementById('placeholderCard').style.display = 'none';
+    document.getElementById('card-canvas-container').style.display = 'block';
+    setStatus('done', '✅ কার্ড তৈরি সম্পন্ন! ডাউনলোড করুন।');
+    document.getElementById('downloadBtn').disabled = false;
+    cardReady = true;
+  } catch(err) {
+    setStatus('error', '❌ সমস্যা হয়েছে: ' + err.message);
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '👁️ প্রিভিউ দেখুন';
+  }
+}
+
+function downloadCard() {
+  if (!cardReady) return;
+  const canvas = document.getElementById('cardCanvas');
+  const name = document.getElementById('nameInput').value.trim().replace(/\s+/g, '-') || 'card';
+  const link = document.createElement('a');
+  link.download = `shobdochitro-${name}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>

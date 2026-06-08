@@ -128,9 +128,41 @@
   .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* Visitor Counter */
+  .visitor-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    padding: 10px 22px;
+    margin-top: 18px;
+    font-family: 'Hind Siliguri', sans-serif;
+    color: #d4b8ff;
+    font-size: 0.88rem;
+  }
+  .visitor-counter .vc-count {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #e8b800;
+    letter-spacing: 1px;
+  }
+  .vc-dot {
+    width: 8px; height: 8px;
+    background: #4dffaa;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.4; transform:scale(0.7); }
+  }
+
   /* Footer credit */
   .page-footer {
-    margin-top: 28px;
+    margin-top: 16px;
     text-align: center;
     font-size: 0.78rem;
     color: rgba(255,255,255,0.45);
@@ -195,6 +227,13 @@
   </div>
 </div>
 
+<!-- Visitor Counter -->
+<div class="visitor-counter">
+  <span class="vc-dot"></span>
+  <span>মোট ভিজিটর:</span>
+  <span class="vc-count" id="visitorCount">০</span>
+</div>
+
 <!-- Page footer -->
 <div class="page-footer">
   কারিগরি সহায়তায়:
@@ -220,7 +259,7 @@ function toggleBG() {
     sw.classList.remove('on');
     sub.textContent = 'বন্ধ — মূল ছবি ব্যবহার হবে';
   }
-  bgRemovedBlob = null; // reset cache
+  bgRemovedBlob = null;
 }
 
 // Photo upload
@@ -269,7 +308,6 @@ async function removeBackground(dataURL) {
   return await response.blob();
 }
 
-// Load image from blob
 function loadBlobAsImage(blob) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
@@ -280,7 +318,6 @@ function loadBlobAsImage(blob) {
   });
 }
 
-// Load image from dataURL
 function loadDataURLAsImage(dataURL) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -290,7 +327,6 @@ function loadDataURLAsImage(dataURL) {
   });
 }
 
-// Load image from URL (cross-origin)
 function loadImageFromURL(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -301,14 +337,12 @@ function loadImageFromURL(url) {
   });
 }
 
-// Draw the card
 async function drawCard(personName, personTitle, personImg) {
   const SIZE = 900;
   const canvas = document.getElementById('cardCanvas');
   canvas.width = SIZE; canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
 
-  // 1. Background Gradient
   const bgGrad = ctx.createLinearGradient(0, 0, SIZE, SIZE);
   bgGrad.addColorStop(0, '#f0e8ff');
   bgGrad.addColorStop(0.4, '#ddc8f8');
@@ -316,7 +350,6 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, SIZE, SIZE);
 
-  // 2. Wave shape bottom
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(0, SIZE * 0.54); 
@@ -327,7 +360,6 @@ async function drawCard(personName, personTitle, personImg) {
   waveGrad.addColorStop(0, '#3a0080'); waveGrad.addColorStop(1, '#160030');
   ctx.fillStyle = waveGrad; ctx.fill(); ctx.restore();
 
-  // 3. Second wave layer
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(0, SIZE*0.63);
@@ -336,12 +368,10 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.lineTo(SIZE, SIZE); ctx.lineTo(0, SIZE); ctx.closePath();
   ctx.fillStyle = 'rgba(70,0,140,0.40)'; ctx.fill(); ctx.restore();
 
-  // 4. Circular Avatar
   const avatarR = SIZE * 0.20; 
   const avatarCX = SIZE / 2;
   const avatarCY = SIZE * 0.27;
 
-  // Shadow for circle
   ctx.save();
   ctx.beginPath();
   ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
@@ -352,7 +382,6 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fill();
   ctx.restore();
 
-  // Gold gradient circular border
   ctx.save();
   const borderGrad = ctx.createLinearGradient(avatarCX - avatarR, avatarCY - avatarR, avatarCX + avatarR, avatarCY + avatarR);
   borderGrad.addColorStop(0, '#ffe566');
@@ -365,7 +394,6 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.stroke();
   ctx.restore();
 
-  // Clip and draw image inside circle
   ctx.save();
   ctx.beginPath();
   ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI * 2);
@@ -383,7 +411,6 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.drawImage(personImg, drawX, drawY, drawW, drawH);
   ctx.restore();
 
-  // 5. Logos
   try {
     const logoSC = await loadImageFromURL('https://iili.io/CK8NYYJ.png');
     const ls = SIZE * 0.18;
@@ -396,7 +423,6 @@ async function drawCard(personName, personTitle, personImg) {
     ctx.drawImage(apImg, SIZE*0.03, SIZE*0.03, ls, ls);
   } catch(e) {}
 
-  // 6. Main Title & Subtitle (Pushed up slightly to give room below)
   const textBaseY = SIZE * 0.65; 
   const titleSize = Math.round(SIZE * 0.112);
   ctx.save();
@@ -421,15 +447,11 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillText('শুভ উদ্বোধনে শুভকামনা', SIZE/2, sub1Y);
   ctx.restore();
 
-  // 7. Name & Designation (Pushed up slightly)
   const nameY = sub1Y + SIZE*0.085;
   const titleY = nameY + SIZE*0.045;
-  
-  // Branding section (Pushed down to bottom)
   const brandY = SIZE * 0.925;
   const urlY = SIZE * 0.96;
 
-  // Responsive Name
   ctx.save();
   ctx.textAlign = 'center';
   let nameFontSize = Math.round(SIZE*0.042);
@@ -444,7 +466,6 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillText(personName || 'আপনার নাম', SIZE/2, nameY);
   ctx.restore();
 
-  // Responsive Designation
   ctx.save();
   ctx.textAlign = 'center';
   let desFontSize = Math.round(SIZE*0.028);
@@ -459,7 +480,6 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillText(personTitle || '', SIZE/2, titleY);
   ctx.restore();
 
-  // 8. Bottom Branding Section (Ensuring NO overlap)
   ctx.save();
   const sg = ctx.createLinearGradient(0, SIZE*0.87, 0, SIZE);
   sg.addColorStop(0, 'rgba(8,0,25,0)'); sg.addColorStop(1, 'rgba(8,0,25,0.88)');
@@ -478,7 +498,6 @@ async function drawCard(personName, personTitle, personImg) {
   ctx.fillText('www.shobdochitro.online', SIZE/2, urlY);
   ctx.restore();
 
-  // 9. Footer: AP logo image
   try {
     const apFooter = await loadImageFromURL('https://iili.io/CKSHs1I.png');
     const fh = SIZE * 0.055;
@@ -486,7 +505,6 @@ async function drawCard(personName, personTitle, personImg) {
   } catch(e) {}
 }
 
-// MAIN GENERATE
 async function generateCard() {
   const name = document.getElementById('nameInput').value.trim();
   const title = document.getElementById('titleInput').value.trim();
@@ -537,6 +555,22 @@ function downloadCard() {
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
+
+// Visitor Counter
+(function() {
+  const key = 'shobdochitro_visitors';
+  let count = parseInt(localStorage.getItem(key) || '0');
+  const visited = sessionStorage.getItem('sc_visited');
+  if (!visited) {
+    count++;
+    localStorage.setItem(key, count);
+    sessionStorage.setItem('sc_visited', '1');
+  }
+  function toBanglaNum(n) {
+    return n.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+  }
+  document.getElementById('visitorCount').textContent = toBanglaNum(count);
+})();
 </script>
 </body>
 </html>
